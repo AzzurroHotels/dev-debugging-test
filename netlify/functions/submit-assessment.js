@@ -2,16 +2,34 @@
 const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
+  // Handle CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
       body: JSON.stringify({ error: 'Method not allowed' })
     };
   }
 
   try {
+    console.log('Function called');
     const data = JSON.parse(event.body);
+    console.log('Data parsed:', { from: data.from, to: data.to, subject: data.subject });
     
     // Send to Resend API
     const response = await fetch('https://api.resend.com/emails', {
@@ -28,7 +46,16 @@ exports.handler = async (event, context) => {
       })
     });
 
-    const result = await response.json();
+    const result = await response.text();
+    console.log('Resend response status:', response.status);
+    console.log('Resend response:', result);
+
+    let jsonResult;
+    try {
+      jsonResult = JSON.parse(result);
+    } catch (e) {
+      jsonResult = { raw: result };
+    }
 
     if (response.ok) {
       return {
@@ -37,24 +64,34 @@ exports.handler = async (event, context) => {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': 'Content-Type',
         },
-        body: JSON.stringify({ success: true, data: result })
+        body: JSON.stringify({ success: true, data: jsonResult })
       };
     } else {
+      console.error('Resend API error:', response.status, jsonResult);
       return {
         statusCode: response.status,
         headers: {
           'Access-Control-Allow-Origin': '*',
         },
-        body: JSON.stringify({ error: result })
+        body: JSON.stringify({ 
+          error: 'Email sending failed', 
+          details: jsonResult,
+          status: response.status 
+        })
       };
     }
   } catch (error) {
+    console.error('Function error:', error);
     return {
       statusCode: 500,
       headers: {
         'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ 
+        error: 'Internal server error',
+        message: error.message,
+        stack: error.stack
+      })
     };
   }
 };
