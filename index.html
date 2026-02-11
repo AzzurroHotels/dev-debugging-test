@@ -690,10 +690,10 @@
 
             <div class="nav-buttons">
                 <button class="btn btn-secondary" id="prevBtn" onclick="navigateQuestion(-1)">
-                    ← Previous
+                    â† Previous
                 </button>
                 <button class="btn" id="nextBtn" onclick="navigateQuestion(1)">
-                    Next →
+                    Next â†’
                 </button>
                 <button class="btn hidden" id="submitBtn" onclick="submitTest()">
                     Submit Assessment
@@ -705,7 +705,7 @@
     <!-- Success Modal -->
     <div class="modal" id="successModal">
         <div class="modal-content">
-            <div class="success-icon">✓</div>
+            <div class="success-icon">âœ“</div>
             <h2>Assessment Submitted!</h2>
             <p>Thank you for completing the debugging assessment. Your answers have been submitted successfully and our team will review them shortly.</p>
             <button class="btn" onclick="location.reload()">Close</button>
@@ -814,16 +814,15 @@
             };
             
             try {
-                // Send to Resend API
-                const response = await fetch('https://api.resend.com/emails', {
+                // Send to Netlify Function
+                const response = await fetch('/.netlify/functions/submit-assessment', {
                     method: 'POST',
                     headers: {
-                        'Authorization': 'Bearer YOUR_RESEND_API_KEY_HERE',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         from: 'Debugging Assessment <onboarding@resend.dev>',
-                        to: ['your-company-email@example.com'], // Replace with your email
+                        to: ['careers@azzurrohotels.com'],
                         subject: `Debug Assessment Submission - ${candidateData.fullName}`,
                         html: generateEmailHTML(submissionData)
                     })
@@ -859,7 +858,7 @@
                 <body>
                     <div class="container">
                         <div class="header">
-                            <h1>🐛 Debug Assessment Submission</h1>
+                            <h1>ðŸ› Debug Assessment Submission</h1>
                         </div>
                         
                         <div class="info">
