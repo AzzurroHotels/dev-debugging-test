@@ -798,18 +798,24 @@
             const submitBtn = document.getElementById('submitBtn');
             const originalText = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = 'Submitting...<span class="spinner"></span>';
+            submitBtn.innerHTML = 'Grading Answers...<span class="spinner"></span>';
             
             // Collect all answers
             const answers = {};
             for (let i = 1; i <= totalQuestions; i++) {
-                answers[`question${i}`] = document.getElementById(`answer${i}`).value;
+                answers[`question${i}`] = document.getElementById(`answer${i}`).value || '';
             }
+            
+            // Grade the answers
+            const gradingResults = gradeAllAnswers(answers);
+            
+            submitBtn.innerHTML = 'Sending Results...<span class="spinner"></span>';
             
             // Prepare submission data
             const submissionData = {
                 candidate: candidateData,
                 answers: answers,
+                grading: gradingResults,
                 submittedAt: new Date().toISOString()
             };
             
@@ -821,9 +827,9 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        from: 'Debugging Assessment <onboarding@resend.dev>',
+                        from: 'Dev Test <dev-test@interview.azzurrohotels.com>',
                         to: ['careers@azzurrohotels.com'],
-                        subject: `Debug Assessment Submission - ${candidateData.fullName}`,
+                        subject: `Debug Assessment Submission - ${candidateData.fullName} - Score: ${gradingResults.totalScore}%`,
                         html: generateEmailHTML(submissionData)
                     })
                 });
@@ -838,6 +844,191 @@
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
             }
+        }
+
+        function gradeAllAnswers(answers) {
+            const results = {
+                question1: gradeQuestion1(answers.question1),
+                question2: gradeQuestion2(answers.question2),
+                question3: gradeQuestion3(answers.question3),
+                question4: gradeQuestion4(answers.question4),
+                question5: gradeQuestion5(answers.question5)
+            };
+            
+            const totalScore = Object.values(results).reduce((sum, result) => sum + result.score, 0) / 5;
+            
+            return {
+                ...results,
+                totalScore: Math.round(totalScore),
+                grade: getGradeLabel(totalScore)
+            };
+        }
+
+        function gradeQuestion1(answer) {
+            if (!answer || answer.trim() === '') {
+                return { score: 0, feedback: ['âœ— No answer provided'], category: 'Race Condition' };
+            }
+            
+            const answerLower = answer.toLowerCase();
+            let score = 0;
+            const feedback = [];
+            
+            if (answerLower.includes('race condition') || answerLower.includes('race')) {
+                score += 30;
+                feedback.push('âœ“ Identified race condition');
+            } else {
+                feedback.push('âœ— Did not mention race condition');
+            }
+            
+            if (answerLower.includes('concurrent') || answerLower.includes('simultaneous')) {
+                score += 25;
+                feedback.push('âœ“ Understood concurrent access issue');
+            }
+            
+            if (answerLower.includes('await') || answerLower.includes('sequential')) {
+                score += 30;
+                feedback.push('âœ“ Provided solution');
+            }
+            
+            if (answer.includes('function') || answer.includes('=>')) {
+                score += 15;
+                feedback.push('âœ“ Provided code');
+            }
+            
+            return { score: Math.min(score, 100), feedback, category: 'Race Condition' };
+        }
+
+        function gradeQuestion2(answer) {
+            if (!answer || answer.trim() === '') {
+                return { score: 0, feedback: ['âœ— No answer provided'], category: 'Memory Leak' };
+            }
+            
+            const answerLower = answer.toLowerCase();
+            let score = 0;
+            const feedback = [];
+            
+            if (answerLower.includes('memory leak') || answerLower.includes('leak')) {
+                score += 30;
+                feedback.push('âœ“ Identified memory leak');
+            } else {
+                feedback.push('âœ— Did not mention memory leak');
+            }
+            
+            if (answerLower.includes('clearinterval') || answerLower.includes('clear interval')) {
+                score += 40;
+                feedback.push('âœ“ Mentioned clearInterval solution');
+            } else {
+                feedback.push('âœ— Missing clearInterval cleanup');
+            }
+            
+            if (answerLower.includes('return') && (answerLower.includes('cleanup') || answerLower.includes('=>'))) {
+                score += 30;
+                feedback.push('âœ“ Provided cleanup function');
+            }
+            
+            return { score: Math.min(score, 100), feedback, category: 'Memory Leak' };
+        }
+
+        function gradeQuestion3(answer) {
+            if (!answer || answer.trim() === '') {
+                return { score: 0, feedback: ['âœ— No answer provided'], category: 'SQL Injection' };
+            }
+            
+            const answerLower = answer.toLowerCase();
+            let score = 0;
+            const feedback = [];
+            
+            if (answerLower.includes('sql injection') || answerLower.includes('injection')) {
+                score += 35;
+                feedback.push('âœ“ Identified SQL injection vulnerability');
+            } else {
+                feedback.push('âœ— Did not identify SQL injection');
+            }
+            
+            if (answerLower.includes('parameter') || answerLower.includes('$1') || answerLower.includes('prepared')) {
+                score += 35;
+                feedback.push('âœ“ Provided parameterized query solution');
+            } else {
+                feedback.push('âœ— Missing parameterized query solution');
+            }
+            
+            if (answerLower.includes('bcrypt') || answerLower.includes('hash')) {
+                score += 30;
+                feedback.push('âœ“ Mentioned proper password hashing');
+            } else {
+                feedback.push('âœ— Did not mention bcrypt/hashing');
+            }
+            
+            return { score: Math.min(score, 100), feedback, category: 'SQL Injection' };
+        }
+
+        function gradeQuestion4(answer) {
+            if (!answer || answer.trim() === '') {
+                return { score: 0, feedback: ['âœ— No answer provided'], category: 'Closure & Scope' };
+            }
+            
+            const answerLower = answer.toLowerCase();
+            let score = 0;
+            const feedback = [];
+            
+            if (answerLower.includes('closure') || answerLower.includes('scope')) {
+                score += 30;
+                feedback.push('âœ“ Identified closure/scope issue');
+            } else {
+                feedback.push('âœ— Did not mention closure/scope');
+            }
+            
+            if (answerLower.includes('var') && answerLower.includes('let')) {
+                score += 35;
+                feedback.push('âœ“ Understood var vs let');
+            } else {
+                feedback.push('âœ— Did not explain var vs let issue');
+            }
+            
+            if (answerLower.includes('let i') || answerLower.includes('const i')) {
+                score += 35;
+                feedback.push('âœ“ Provided let/const solution');
+            }
+            
+            return { score: Math.min(score, 100), feedback, category: 'Closure & Scope' };
+        }
+
+        function gradeQuestion5(answer) {
+            if (!answer || answer.trim() === '') {
+                return { score: 0, feedback: ['âœ— No answer provided'], category: 'Deep Copy' };
+            }
+            
+            const answerLower = answer.toLowerCase();
+            let score = 0;
+            const feedback = [];
+            
+            if (answerLower.includes('shallow') && answerLower.includes('deep')) {
+                score += 35;
+                feedback.push('âœ“ Explained shallow vs deep copy');
+            } else {
+                feedback.push('âœ— Did not explain shallow vs deep copy');
+            }
+            
+            if (answerLower.includes('reference')) {
+                score += 25;
+                feedback.push('âœ“ Understood reference issue');
+            }
+            
+            if (answerLower.includes('json.parse') || answerLower.includes('structuredclone') || answerLower.includes('recursive')) {
+                score += 40;
+                feedback.push('âœ“ Provided solution');
+            } else {
+                feedback.push('âœ— No solution provided');
+            }
+            
+            return { score: Math.min(score, 100), feedback, category: 'Deep Copy' };
+        }
+
+        function getGradeLabel(score) {
+            if (score >= 90) return 'Excellent';
+            if (score >= 75) return 'Good';
+            if (score >= 60) return 'Adequate';
+            return 'Needs Improvement';
         }
 
         function generateEmailHTML(data) {
@@ -858,7 +1049,12 @@
                 <body>
                     <div class="container">
                         <div class="header">
-                            <h1>ðŸ› Debug Assessment Submission</h1>
+                            <h1>ðŸ› Debug Assessment Results</h1>
+                        </div>
+                        
+                        <div style="background: ${data.grading.totalScore >= 75 ? '#00ff88' : data.grading.totalScore >= 60 ? '#ffa502' : '#ff4757'}; color: white; padding: 30px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold;">${data.grading.grade}</div>
+                            <div style="font-size: 48px; font-weight: bold; margin-top: 10px;">${data.grading.totalScore}%</div>
                         </div>
                         
                         <div class="info">
@@ -866,32 +1062,59 @@
                             <p><strong>Name:</strong> ${data.candidate.fullName}</p>
                             <p><strong>Email:</strong> ${data.candidate.email}</p>
                             <p><strong>Submitted:</strong> ${new Date(data.submittedAt).toLocaleString()}</p>
+                            <p><strong>Overall Score:</strong> <span style="color: ${data.grading.totalScore >= 75 ? '#00cc6a' : data.grading.totalScore >= 60 ? '#ffa502' : '#ff4757'}; font-weight: bold;">${data.grading.grade} (${data.grading.totalScore}%)</span></p>
                         </div>
                         
-                        <h2>Answers</h2>
+                        <div style="padding: 30px; background: #f9f9f9; margin: 20px 0;">
+                            <h2>Score Summary</h2>
+                            <p><strong>Q1 - Race Condition:</strong> ${data.grading.question1.score}%</p>
+                            <p><strong>Q2 - Memory Leak:</strong> ${data.grading.question2.score}%</p>
+                            <p><strong>Q3 - SQL Injection:</strong> ${data.grading.question3.score}%</p>
+                            <p><strong>Q4 - Closure & Scope:</strong> ${data.grading.question4.score}%</p>
+                            <p><strong>Q5 - Deep Copy:</strong> ${data.grading.question5.score}%</p>
+                        </div>
+                        
+                        <h2>Detailed Results</h2>
                         
                         <div class="question">
-                            <div class="question-title">Question 1: Race Condition in Async Counter</div>
+                            <div class="question-title">Question 1: Race Condition (Score: ${data.grading.question1.score}%)</div>
+                            <div style="margin: 10px 0;">
+                                ${data.grading.question1.feedback.map(f => `<div style="margin: 5px 0; color: ${f.startsWith('âœ“') ? '#27ae60' : '#e74c3c'};">${f}</div>`).join('')}
+                            </div>
                             <div class="answer">${data.answers.question1 || 'No answer provided'}</div>
                         </div>
                         
                         <div class="question">
-                            <div class="question-title">Question 2: Memory Leak in React Component</div>
+                            <div class="question-title">Question 2: Memory Leak (Score: ${data.grading.question2.score}%)</div>
+                            <div style="margin: 10px 0;">
+                                ${data.grading.question2.feedback.map(f => `<div style="margin: 5px 0; color: ${f.startsWith('âœ“') ? '#27ae60' : '#e74c3c'};">${f}</div>`).join('')}
+                            </div>
                             <div class="answer">${data.answers.question2 || 'No answer provided'}</div>
                         </div>
                         
                         <div class="question">
-                            <div class="question-title">Question 3: SQL Injection & Logic Error</div>
+                            <div class="question-title">Question 3: SQL Injection (Score: ${data.grading.question3.score}%)</div>
+                            <div style="margin: 10px 0;">
+                                ${data.grading.question3.feedback.map(f => `<div style="margin: 5px 0; color: ${f.startsWith('âœ“') ? '#27ae60' : '#e74c3c'};">${f}</div>`).join('')}
+                            </div>
                             <div class="answer">${data.answers.question3 || 'No answer provided'}</div>
                         </div>
                         
                         <div class="question">
-                            <div class="question-title">Question 4: Closure and Scope Bug in Loop</div>
+                            <div class="question-title">Question 4: Closure & Scope (Score: ${data.grading.question4.score}%)</div>
+                            <div style="margin: 10px 0;">
+                                ${data.grading.question4.feedback.map(f => `<div style="margin: 5px 0; color: ${f.startsWith('âœ“') ? '#27ae60' : '#e74c3c'};">${f}</div>`).join('')}
+                            </div>
                             <div class="answer">${data.answers.question4 || 'No answer provided'}</div>
                         </div>
                         
                         <div class="question">
-                            <div class="question-title">Question 5: Shallow vs Deep Copy Problem</div>
+                            <div class="question-title">Question 5: Deep Copy (Score: ${data.grading.question5.score}%)</div>
+                            <div style="margin: 10px 0;">
+                                ${data.grading.question5.feedback.map(f => `<div style="margin: 5px 0; color: ${f.startsWith('âœ“') ? '#27ae60' : '#e74c3c'};">${f}</div>`).join('')}
+                            </div>
+                            <div class="answer">${data.answers.question5 || 'No answer provided'}</div>
+                        </div>
                             <div class="answer">${data.answers.question5 || 'No answer provided'}</div>
                         </div>
                     </div>
