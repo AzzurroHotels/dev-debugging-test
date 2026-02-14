@@ -478,6 +478,54 @@
         .hidden {
             display: none;
         }
+
+        /* Tab Switch Warning Banner */
+        .tab-warning {
+            background: rgba(255, 165, 2, 0.1);
+            border: 1px solid var(--warning);
+            border-radius: 10px;
+            padding: 18px 24px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .tab-warning-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .tab-warning-text {
+            color: var(--warning);
+            font-size: 0.95rem;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        /* Flagged Question Indicator */
+        .flag-badge {
+            background: var(--warning);
+            color: var(--bg-primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 10px;
+            display: none;
+        }
+
+        .flag-badge.visible {
+            display: inline-block;
+        }
+
+        .question-card.flagged {
+            border-color: var(--warning);
+            box-shadow: 0 10px 40px rgba(255, 165, 2, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -515,6 +563,13 @@
 
         <!-- Test Page -->
         <div class="test-page" id="testPage">
+            <div class="tab-warning">
+                <span class="tab-warning-icon">&#9888;</span>
+                <span class="tab-warning-text">
+                    Warning: Switching tabs or windows during the assessment will be detected. Any question you are on when a tab switch occurs will be flagged for review.
+                </span>
+            </div>
+
             <div class="progress-bar">
                 <div class="progress-fill" id="progressBar" style="width: 20%"></div>
             </div>
@@ -524,7 +579,10 @@
                 <div class="question-card" data-question="1">
                     <div class="question-header">
                         <span class="question-number">QUESTION 1 OF 5</span>
-                        <span class="difficulty-badge">HARD</span>
+                        <span>
+                            <span class="flag-badge" id="flag1">FLAGGED</span>
+                            <span class="difficulty-badge">HARD</span>
+                        </span>
                     </div>
                     <h3 class="question-title">Race Condition in Async Counter</h3>
                     <p class="question-description">
@@ -556,7 +614,10 @@
                 <div class="question-card hidden" data-question="2">
                     <div class="question-header">
                         <span class="question-number">QUESTION 2 OF 5</span>
-                        <span class="difficulty-badge">HARD</span>
+                        <span>
+                            <span class="flag-badge" id="flag2">FLAGGED</span>
+                            <span class="difficulty-badge">HARD</span>
+                        </span>
                     </div>
                     <h3 class="question-title">Memory Leak in React Component</h3>
                     <p class="question-description">
@@ -592,7 +653,10 @@
                 <div class="question-card hidden" data-question="3">
                     <div class="question-header">
                         <span class="question-number">QUESTION 3 OF 5</span>
-                        <span class="difficulty-badge">HARD</span>
+                        <span>
+                            <span class="flag-badge" id="flag3">FLAGGED</span>
+                            <span class="difficulty-badge">HARD</span>
+                        </span>
                     </div>
                     <h3 class="question-title">SQL Injection & Logic Error</h3>
                     <p class="question-description">
@@ -625,7 +689,10 @@
                 <div class="question-card hidden" data-question="4">
                     <div class="question-header">
                         <span class="question-number">QUESTION 4 OF 5</span>
-                        <span class="difficulty-badge">HARD</span>
+                        <span>
+                            <span class="flag-badge" id="flag4">FLAGGED</span>
+                            <span class="difficulty-badge">HARD</span>
+                        </span>
                     </div>
                     <h3 class="question-title">Closure and Scope Bug in Loop</h3>
                     <p class="question-description">
@@ -653,7 +720,10 @@
                 <div class="question-card hidden" data-question="5">
                     <div class="question-header">
                         <span class="question-number">QUESTION 5 OF 5</span>
-                        <span class="difficulty-badge">HARD</span>
+                        <span>
+                            <span class="flag-badge" id="flag5">FLAGGED</span>
+                            <span class="difficulty-badge">HARD</span>
+                        </span>
                     </div>
                     <h3 class="question-title">Shallow vs Deep Copy Problem</h3>
                     <p class="question-description">
@@ -717,6 +787,18 @@
         let currentQuestion = 1;
         const totalQuestions = 5;
         let candidateData = {};
+        const flaggedQuestions = new Set();
+        let testActive = false;
+
+        // Tab switch detection
+        window.onblur = function() {
+            if (!testActive) return;
+            flaggedQuestions.add(currentQuestion);
+            const badge = document.getElementById('flag' + currentQuestion);
+            if (badge) badge.classList.add('visible');
+            const card = document.querySelector(`.question-card[data-question="${currentQuestion}"]`);
+            if (card) card.classList.add('flagged');
+        };
 
         // Registration Form Handler
         document.getElementById('registrationForm').addEventListener('submit', function(e) {
@@ -756,6 +838,7 @@
         function startTest() {
             document.getElementById('registrationPage').style.display = 'none';
             document.getElementById('testPage').classList.add('active');
+            testActive = true;
             updateProgress();
         }
 
@@ -795,6 +878,7 @@
         }
 
         async function submitTest() {
+            testActive = false;
             const submitBtn = document.getElementById('submitBtn');
             const originalText = submitBtn.innerHTML;
             submitBtn.disabled = true;
@@ -816,6 +900,7 @@
                 candidate: candidateData,
                 answers: answers,
                 grading: gradingResults,
+                flaggedQuestions: Array.from(flaggedQuestions),
                 submittedAt: new Date().toISOString()
             };
             
@@ -1065,6 +1150,13 @@
                             <p><strong>Overall Score:</strong> <span style="color: ${data.grading.totalScore >= 75 ? '#00cc6a' : data.grading.totalScore >= 60 ? '#ffa502' : '#ff4757'}; font-weight: bold;">${data.grading.grade} (${data.grading.totalScore}%)</span></p>
                         </div>
                         
+                        ${data.flaggedQuestions.length > 0 ? `
+                        <div style="background: #fff3cd; border-left: 4px solid #ffa502; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                            <h2 style="color: #856404;">&#9888; Tab Switch Detected</h2>
+                            <p style="color: #856404;">The candidate switched tabs/windows during the following questions: ${data.flaggedQuestions.map(q => 'Q' + q).join(', ')}</p>
+                        </div>
+                        ` : ''}
+
                         <div style="padding: 30px; background: #f9f9f9; margin: 20px 0;">
                             <h2>Score Summary</h2>
                             <p><strong>Q1 - Race Condition:</strong> ${data.grading.question1.score}%</p>
